@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wealth Journey Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .game-card {
+            min-height: 550px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .hidden {
+            display: none;
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .icon {
+            font-size: 4rem;
+            line-height: 1;
+            transition: transform 0.5s ease-in-out;
+        }
+        .graph-bar {
+            transition: height 1s ease-in-out;
+        }
+        #timeline-chart {
+            width: 100%;
+            height: 220px;
+        }
+        #timeline-chart polyline {
+            fill: none;
+            stroke-width: 3;
+            animation: dash 2s linear forwards;
+        }
+        #timeline-chart .grid {
+            stroke: #e5e7eb;
+            stroke-dasharray: 2, 2;
+            stroke-width: 1;
+        }
+        @keyframes dash {
+            from {
+                stroke-dasharray: 1000;
+                stroke-dashoffset: 1000;
+            }
+            to {
+                stroke-dasharray: 1000;
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="bg-white w-full max-w-lg mx-auto rounded-2xl shadow-xl p-6 md:p-8 text-center overflow-hidden">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="game-card">
+            <h1 class="text-3xl md:text-4xl font-bold text-indigo-600 mb-4">The Wealth Journey Challenge</h1>
+            <p class="text-gray-600 mb-6">First, tell us a little about yourself.</p>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label for="nickname" class="font-semibold text-gray-700">Nickname</label>
+                    <input type="text" id="nickname" class="w-full p-2 mt-1 border rounded" placeholder="e.g., Alex">
+                </div>
+                <div>
+                    <label for="age" class="font-semibold text-gray-700">Age</label>
+                    <input type="number" id="age" class="w-full p-2 mt-1 border rounded" placeholder="e.g., 30">
+                </div>
+                <div>
+                    <label for="gender" class="font-semibold text-gray-700">Gender</label>
+                    <select id="gender" class="w-full p-2 mt-1 border rounded bg-white">
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Prefer not to say</option>
+                    </select>
+                </div>
+            </div>
+             <p id="start-error" class="text-red-500 text-sm mt-2 h-4"></p>
+            <button id="start-btn" class="w-full mt-4 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105">Start Challenge</button>
+        </div>
+        
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="hidden game-card">
+            <h1 id="welcome-title" class="text-3xl md:text-4xl font-bold text-indigo-600 mb-4">Welcome!</h1>
+            <p class="text-gray-600 mb-8 text-lg">This challenge is your first step towards understanding how money works, helping you to achieve your financial goals in life.</p>
+            <i class="fas fa-flag-checkered text-indigo-500 text-6xl mb-8"></i>
+            <button id="begin-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition">Let's Begin!</button>
+        </div>
+
+        <!-- Round 1: A Look at Your Savings -->
+        <div id="round-1" class="hidden game-card">
+            <h2 class="text-2xl font-bold text-red-600 mb-2">Round 1: A Look at Your Savings</h2>
+             <div id="r1-input-screen">
+                <p id="r1-prompt" class="text-gray-600 mb-6">Choose your starting savings amount:</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button data-amount="1000" class="r1-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-red-100 hover:border-red-500 border-2 border-transparent transition">₹1,000</button>
+                    <button data-amount="10000" class="r1-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-red-100 hover:border-red-500 border-2 border-transparent transition">₹10,000</button>
+                    <button data-amount="100000" class="r1-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-red-100 hover:border-red-500 border-2 border-transparent transition">₹1,00,000</button>
+                    <button data-amount="500000" class="r1-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-red-100 hover:border-red-500 border-2 border-transparent transition">₹5,00,000</button>
+                </div>
+            </div>
+            <div id="r1-simulation-screen" class="hidden">
+                 <p class="text-gray-600 mb-6">Let's see what happens to your savings over 5 years.</p>
+                 <div class="relative w-48 h-48 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                    <i id="savings-rat" class="fas fa-cheese text-yellow-400 icon" style="font-size: 6rem; transition: transform 0.5s ease-in-out;"></i>
+                    <i class="fas fa-bug text-red-500 absolute text-4xl -top-2 -right-2 transform rotate-12"></i>
+                </div>
+                <p class="text-2xl font-bold mb-2">Purchasing Power: <span id="savings-value" class="text-red-500"></span></p>
+                <p class="text-lg font-medium mb-6">Year: <span id="year-counter">0</span></p>
+                <button id="next-year-btn" class="w-full bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 transition duration-300">Simulate 1 Year</button>
+            </div>
+        </div>
+
+        <!-- Round 2: Building Wealth -->
+        <div id="round-2" class="hidden game-card">
+            <h2 class="text-2xl font-bold text-blue-600 mb-2">Round 2: Building Wealth</h2>
+            <div id="r2-input-screen">
+                <p id="r2-prompt" class="text-gray-600 mb-6">How much would you like to invest for 30 years?</p>
+                 <div class="grid grid-cols-2 gap-4">
+                    <button data-amount="10000" class="r2-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-blue-100 hover:border-blue-500 border-2 border-transparent transition">₹10,000</button>
+                    <button data-amount="50000" class="r2-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-blue-100 hover:border-blue-500 border-2 border-transparent transition">₹50,000</button>
+                    <button data-amount="100000" class="r2-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-blue-100 hover:border-blue-500 border-2 border-transparent transition">₹1,00,000</button>
+                    <button data-amount="200000" class="r2-amount-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-blue-100 hover:border-blue-500 border-2 border-transparent transition">₹2,00,000</button>
+                </div>
+            </div>
+             <div id="r2-simulation-screen" class="hidden w-full">
+                <p class="text-lg mb-4">Let's compare a Fixed Deposit (6%) vs. an Equity Fund (12%) over 30 years.</p>
+                <div class="h-64 w-full bg-gray-100 rounded-lg p-4 flex items-end justify-around">
+                    <div class="text-center w-1/2">
+                        <p class="font-bold text-blue-600 text-lg">₹<span id="fd-value">0</span></p>
+                        <div class="w-12 md:w-16 bg-blue-400 rounded-t-md graph-bar mx-auto" id="fd-bar" style="height: 0%;"></div>
+                        <p class="text-sm font-bold mt-1">FD</p>
+                    </div>
+                    <div class="text-center w-1/2">
+                         <p class="font-bold text-green-600 text-lg">₹<span id="equity-value">0</span></p>
+                        <div class="w-12 md:w-16 bg-green-400 rounded-t-md graph-bar mx-auto" id="equity-bar" style="height: 0%;"></div>
+                        <p class="text-sm font-bold mt-1">Equity</p>
+                    </div>
+                </div>
+                 <button id="round-2-next" class="mt-6 w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition duration-300">See The Lesson</button>
+            </div>
+        </div>
+        
+        <!-- Round 3: The Doubling Trick -->
+        <div id="round-3" class="hidden game-card">
+            <h2 class="text-2xl font-bold text-yellow-600 mb-2">Round 3: The Doubling Trick</h2>
+            <div id="r3-guess-screen">
+                <p id="r3-prompt" class="text-gray-600 mb-6">If your investment grows at <span class="font-bold">12% per year</span>, how many years will it take to DOUBLE?</p>
+                <i class="fas fa-question-circle text-yellow-500 text-6xl mb-8"></i>
+                <div class="grid grid-cols-2 gap-4">
+                     <button data-guess="4" class="r3-guess-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">4 Years</button>
+                     <button data-guess="6" class="r3-guess-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">6 Years</button>
+                     <button data-guess="8" class="r3-guess-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">8 Years</button>
+                     <button data-guess="10" class="r3-guess-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">10 Years</button>
+                </div>
+            </div>
+             <div id="r3-quiz-screen" class="hidden">
+                 <p id="r3-quiz-prompt" class="text-gray-600 mb-6">Great! Now, using the Rule of 72, how long will it take to double your money at <span class="font-bold">8% per year</span>?</p>
+                 <i class="fas fa-brain text-yellow-500 text-6xl mb-8"></i>
+                  <div class="grid grid-cols-2 gap-4">
+                     <button data-guess="7" class="r3-quiz-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">7 Years</button>
+                     <button data-guess="8" class="r3-quiz-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">8 Years</button>
+                     <button data-guess="9" class="r3-quiz-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">9 Years</button>
+                     <button data-guess="12" class="r3-quiz-btn bg-gray-200 p-4 rounded-lg font-bold hover:bg-yellow-100">12 Years</button>
+                </div>
+             </div>
+        </div>
+
+        <!-- Round 4: The Investment Race -->
+        <div id="round-4" class="hidden game-card">
+            <h2 class="text-2xl font-bold text-purple-600 mb-2">Round 4: The Investment Race</h2>
+            <div id="r4-manual-investment-screen">
+                <p id="r4-prompt" class="text-gray-600 mb-6">You have <span class="font-bold">₹3,60,000</span> to invest over 30 years. Can you time the market to beat a simple automated plan?</p>
+                <div class="bg-gray-100 p-3 rounded-lg mb-4 text-left">
+                    <div class="flex justify-between font-bold"><span>Total Capital:</span><span>₹3,60,000</span></div>
+                    <div class="flex justify-between font-bold text-gray-700"><span>Remaining:</span><span id="remaining-capital">₹3,60,000</span></div>
+                </div>
+                <div class="space-y-3 text-left text-sm">
+                    <div class="bg-gray-50 p-2 rounded-lg"><label class="font-semibold text-gray-700">Year 4: Steady growth.</label><input type="number" data-year="4" class="manual-input w-full p-2 mt-1 border rounded" placeholder="Amount"></div>
+                    <div class="bg-gray-50 p-2 rounded-lg"><label class="font-semibold text-gray-700">Year 9: Sudden dip!</label><input type="number" data-year="9" class="manual-input w-full p-2 mt-1 border rounded" placeholder="Amount"></div>
+                    <div class="bg-gray-50 p-2 rounded-lg"><label class="font-semibold text-gray-700">Year 16: Market is flat.</label><input type="number" data-year="16" class="manual-input w-full p-2 mt-1 border rounded" placeholder="Amount"></div>
+                    <div class="bg-gray-50 p-2 rounded-lg"><label class="font-semibold text-gray-700">Year 21: Massive rally!</label><input type="number" data-year="21" class="manual-input w-full p-2 mt-1 border rounded" placeholder="Amount"></div>
+                    <div class="bg-gray-50 p-2 rounded-lg"><label class="font-semibold text-gray-700">Year 27: Final chance.</label><input type="number" data-year="27" class="manual-input w-full p-2 mt-1 border rounded" placeholder="Amount"></div>
+                </div>
+                <p id="manual-invest-error" class="text-red-500 text-sm mt-2 h-4"></p>
+                <button id="calculate-manual-btn" class="mt-4 w-full bg-purple-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-600">Calculate My Growth</button>
+            </div>
+            <div id="r4-results-screen" class="hidden w-full">
+                 <p class="text-lg mb-4">After 30 years, here are the results:</p>
+                 <div class="flex justify-around items-center text-center mb-4">
+                     <div><p class="text-orange-600 font-bold text-xl md:text-2xl">₹<span id="manual-lumpsum-value">0</span></p><p class="font-semibold text-sm">Your Manual Investment</p></div>
+                     <div><p class="text-purple-600 font-bold text-xl md:text-2xl">₹<span id="sip-value">0</span></p><p class="font-semibold text-sm">Automated SIP</p></div>
+                 </div>
+                 <div class="w-full bg-gray-50 rounded-lg p-2 relative"><svg id="timeline-chart" viewBox="0 0 300 220"></svg><div class="flex justify-between text-xs text-gray-500 px-2"><span>Year 0</span><span>Year 15</span><span>Year 30</span></div></div>
+                 <button id="view-summary-btn" class="mt-6 w-full bg-purple-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-600">View Final Summary</button>
+            </div>
+        </div>
+
+        <!-- Final Summary Screen -->
+        <div id="summary-screen" class="hidden game-card justify-start pt-10">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-4">Your Wealth Journey!</h2>
+            <p class="text-gray-600 mb-6">Here's how different choices performed:</p>
+            <div class="space-y-4 text-left">
+                 <div class="bg-red-100 p-3 rounded-lg flex justify-between items-center"><p class="font-semibold"><i class="fas fa-cash-register mr-2"></i>Savings Value (5 yrs)</p><p class="font-bold text-red-600">₹<span id="summary-savings">0</span></p></div>
+                <div class="bg-blue-100 p-3 rounded-lg flex justify-between items-center"><p class="font-semibold"><i class="fas fa-university mr-2"></i>Fixed Deposit (30 yrs)</p><p class="font-bold text-blue-600">₹<span id="summary-fd">0</span></p></div>
+                 <div class="bg-orange-100 p-3 rounded-lg flex justify-between items-center"><p class="font-semibold"><i class="fas fa-hand-holding-usd mr-2"></i>Manual Lumpsum (30 yrs)</p><p class="font-bold text-orange-600">₹<span id="summary-lumpsum">0</span></p></div>
+                <div class="bg-purple-100 p-3 rounded-lg flex justify-between items-center"><p class="font-semibold"><i class="fas fa-calendar-alt mr-2"></i>Equity SIP (30 yrs)</p><p class="font-bold text-purple-600">₹<span id="summary-sip">0</span></p></div>
+            </div>
+            <button id="restart-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700">Play Again</button>
+            <div class="mt-6 border-t pt-6">
+                <h3 class="text-xl font-bold text-indigo-600 mb-4">Ready for the Next Step?</h3>
+                <button id="tip-btn" class="w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:from-teal-500 hover:to-blue-600 disabled:opacity-50">✨ Get My Personalized Tip</button>
+                <div id="tip-result" class="hidden mt-4 p-4 bg-indigo-50 rounded-lg text-left text-indigo-800">
+                    <p id="tip-content"></p>
+                    <p class="text-sm text-center mt-4 text-gray-600">To clarify your doubts, connect with your personal finance mentor.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center transform transition-all" id="modal-content">
+            <div id="modal-icon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-3xl"></div>
+            <h3 id="modal-title" class="text-xl font-bold mb-2"></h3>
+            <p id="modal-text" class="text-gray-600 mb-6"></p>
+            <button id="modal-close-btn" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Continue</button>
+        </div>
+    </div>
+
+<script>
+    const screens = {
+        start: document.getElementById('start-screen'), 
+        welcome: document.getElementById('welcome-screen'),
+        round1: document.getElementById('round-1'),
+        round2: document.getElementById('round-2'), round3: document.getElementById('round-3'),
+        round4: document.getElementById('round-4'), summary: document.getElementById('summary-screen'),
+    };
+    const modal = document.getElementById('modal'), modalIcon = document.getElementById('modal-icon'),
+        modalTitle = document.getElementById('modal-title'), modalText = document.getElementById('modal-text'),
+        modalCloseBtn = document.getElementById('modal-close-btn');
+    const tipBtn = document.getElementById('tip-btn'), tipResultDiv = document.getElementById('tip-result'),
+        tipContent = document.getElementById('tip-content');
+    let gameState = {};
+
+    function showScreen(screenName) {
+        Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+        screens[screenName].classList.remove('hidden');
+    }
+
+    function showModal(icon, iconBg, title, text, onContinue) {
+        modalIcon.innerHTML = icon;
+        modalIcon.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-3xl ${iconBg}`;
+        modalTitle.innerHTML = title;
+        modalText.innerHTML = text;
+        modal.classList.remove('hidden');
+        modalCloseBtn.onclick = () => { modal.classList.add('hidden'); if (onContinue) onContinue(); };
+    }
+
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const value = progress * (end - start) + start;
+            obj.textContent = `${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+            if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+    }
+    
+    function initGame() {
+        gameState = { nickname: '', age: 0, gender: '', inflationRate: 0.06, fdRate: 0.06, equityRate: 0.12, r1_initial: 0, r1_final: 0, r2_initial: 0, r2_fd_final: 0, r2_equity_final: 0, r4_manual_final: 0, r4_sip_final: 0, };
+        document.getElementById('nickname').value = '';
+        document.getElementById('age').value = '';
+        document.getElementById('start-error').textContent = '';
+        document.getElementById('r1-input-screen').classList.remove('hidden');
+        document.getElementById('r1-simulation-screen').classList.add('hidden');
+        document.getElementById('r2-input-screen').classList.remove('hidden');
+        document.getElementById('r2-simulation-screen').classList.add('hidden');
+        document.getElementById('r3-guess-screen').classList.remove('hidden');
+        document.getElementById('r3-quiz-screen').classList.add('hidden');
+        document.getElementById('r4-manual-investment-screen').classList.remove('hidden');
+        document.getElementById('r4-results-screen').classList.add('hidden');
+        document.querySelectorAll('.manual-input').forEach(input => input.value = '');
+        document.getElementById('remaining-capital').textContent = '₹3,60,000';
+        tipBtn.disabled = false;
+        tipResultDiv.classList.add('hidden');
+        showScreen('start');
+    }
+    
+    function setupStartScreen() {
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const nickname = document.getElementById('nickname').value.trim();
+            const age = document.getElementById('age').value;
+            const errorEl = document.getElementById('start-error');
+
+            if (!nickname || !age) {
+                errorEl.textContent = 'Please fill in your nickname and age.';
+                return;
+            }
+            if (age < 18 || age > 100) {
+                errorEl.textContent = 'Please enter a valid age (18-100).';
+                return;
+            }
+            errorEl.textContent = '';
+            
+            gameState.nickname = nickname;
+            gameState.age = parseInt(age);
+            gameState.gender = document.getElementById('gender').value;
+
+            document.getElementById('welcome-title').textContent = `Welcome, ${gameState.nickname}!`;
+            showScreen('welcome');
+        });
+
+        document.getElementById('begin-btn').addEventListener('click', () => {
+            personalizeRoundText();
+            showScreen('round1');
+        });
+    }
+
+    function personalizeRoundText() {
+        document.getElementById('r1-prompt').textContent = `Alright ${gameState.nickname}, choose your starting savings amount:`;
+        document.getElementById('r2-prompt').textContent = `${gameState.nickname}, how much would you like to invest for 30 years?`;
+        document.getElementById('r3-prompt').innerHTML = `Okay ${gameState.nickname}, let's try a quick quiz. If your investment grows at <span class="font-bold">12% per year</span>, how many years will it take to DOUBLE?`;
+        document.getElementById('r3-quiz-prompt').innerHTML = `Great! Now, using the Rule of 72, how long will it take to double your money at <span class="font-bold">8% per year</span>, ${gameState.nickname}?`;
+        document.getElementById('r4-prompt').innerHTML = `Last round, ${gameState.nickname}! You have <span class="font-bold">₹3,60,000</span> to invest over 30 years. Can you beat an automated plan?`;
+    }
+
+    function setupRound1() {
+        document.querySelectorAll('.r1-amount-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                gameState.r1_initial = parseInt(e.currentTarget.dataset.amount);
+                gameState.year = 0;
+                gameState.currentSavings = gameState.r1_initial;
+                document.getElementById('savings-value').textContent = `₹${gameState.r1_initial.toLocaleString('en-IN')}`;
+                document.getElementById('year-counter').textContent = '0';
+                document.getElementById('savings-rat').style.transform = 'scale(1)';
+                document.getElementById('next-year-btn').disabled = false;
+                document.getElementById('r1-input-screen').classList.add('hidden');
+                document.getElementById('r1-simulation-screen').classList.remove('hidden');
+            });
+        });
+
+        document.getElementById('next-year-btn').addEventListener('click', () => {
+            if (gameState.year >= 5) return;
+            gameState.year++;
+            gameState.currentSavings *= (1 - gameState.inflationRate);
+            document.getElementById('savings-value').textContent = `₹${gameState.currentSavings.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+            document.getElementById('year-counter').textContent = gameState.year;
+            document.getElementById('savings-rat').style.transform = `scale(${1 - (gameState.year * 0.12)})`;
+
+            if (gameState.year === 5) {
+                gameState.r1_final = gameState.currentSavings;
+                document.getElementById('next-year-btn').disabled = true;
+                const loss = gameState.r1_initial - gameState.r1_final;
+                setTimeout(() => {
+                    showModal('<i class="fas fa-mouse"></i>', 'bg-red-500', 'Did you see that?',
+                        `Your savings started at <strong>₹${gameState.r1_initial.toLocaleString('en-IN')}</strong>.<br>After 5 years, its buying power is just <strong>₹${gameState.r1_final.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>. That's a loss of <strong>₹${loss.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>!<br><br>Inflation, like a silent rat, eats your money. To grow wealth, you must invest to earn more than inflation. Let's see how.`,
+                        () => showScreen('round2')
+                    );
+                }, 500);
+            }
+        });
+    }
+
+    function setupRound2() {
+        document.querySelectorAll('.r2-amount-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                gameState.r2_initial = parseInt(e.currentTarget.dataset.amount);
+                document.getElementById('r2-input-screen').classList.add('hidden');
+                document.getElementById('r2-simulation-screen').classList.remove('hidden');
+                
+                gameState.r2_fd_final = gameState.r2_initial * Math.pow(1 + gameState.fdRate, 30);
+                gameState.r2_equity_final = gameState.r2_initial * Math.pow(1 + gameState.equityRate, 30);
+                
+                animateValue(document.getElementById('fd-value'), 0, gameState.r2_fd_final, 2000);
+                animateValue(document.getElementById('equity-value'), 0, gameState.r2_equity_final, 2000);
+
+                setTimeout(() => {
+                    const fdHeight = (gameState.r2_fd_final / gameState.r2_equity_final) * 100;
+                    document.getElementById('fd-bar').style.height = `${fdHeight}%`;
+                    document.getElementById('equity-bar').style.height = '100%';
+                }, 200);
+            });
+        });
+        document.getElementById('round-2-next').onclick = () => {
+             showModal('<i class="fas fa-chart-line"></i>', 'bg-blue-500', 'The Power of Compounding',
+                `An FD at 6% barely beats inflation, showing little real growth. But equities, with higher returns, unlock the magic of compounding, turning your <strong>₹${gameState.r2_initial.toLocaleString('en-IN')}</strong> into a massive <strong>₹${gameState.r2_equity_final.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</strong>! This is how you make your money work for you.`,
+                () => showScreen('round3')
+            );
+        }
+    }
+
+    function setupRound3() {
+        document.querySelectorAll('.r3-guess-btn').forEach(button => {
+            button.addEventListener('click', e => {
+                const isCorrect = e.currentTarget.dataset.guess === "6";
+                const message = isCorrect ? "You got it! The answer is 6 years." : "Not quite! The correct answer is 6 years.";
+                showModal(
+                    isCorrect ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>',
+                    isCorrect ? 'bg-green-500' : 'bg-red-500', message,
+                    `There's a shortcut called the <strong>Rule of 72</strong>. Just divide 72 by the interest rate to estimate how many years it takes for your money to double.<br><br><strong>72 / 12% = 6 years</strong>.`,
+                    () => {
+                        document.getElementById('r3-guess-screen').classList.add('hidden');
+                        document.getElementById('r3-quiz-screen').classList.remove('hidden');
+                    }
+                );
+            });
+        });
+         document.querySelectorAll('.r3-quiz-btn').forEach(button => {
+            button.addEventListener('click', e => {
+                 const isCorrect = e.currentTarget.dataset.guess === "9";
+                 const message = isCorrect ? "Excellent! You've mastered the rule!" : "Close! The correct answer is 9 years (72 / 8).";
+                  showModal(
+                    isCorrect ? '<i class="fas fa-star"></i>' : '<i class="fas fa-lightbulb"></i>',
+                    isCorrect ? 'bg-yellow-500' : 'bg-blue-500', message,
+                    `This simple trick helps you quickly understand the power of different growth rates. Now for the final challenge!`,
+                    () => showScreen('round4')
+                );
+            });
+        });
+    }
+
+    function setupRound4() {
+        const totalCapital = 360000, manualInputs = document.querySelectorAll('.manual-input'),
+            remainingCapitalEl = document.getElementById('remaining-capital'), errorEl = document.getElementById('manual-invest-error'),
+            marketReturns30Years = [0.18, 0.25, 0.11, 0.08, -0.15, 0.28, 0.16, 0.05, -0.20, 0.35, 0.12, 0.09, 0.22, 0.19, 0.02, -0.10, 0.30, 0.24, 0.15, 0.1, 0.40, -0.05, 0.20, 0.17, 0.08, 0.14, -0.08, 0.26, 0.21, 0.13];
+
+        const updateRemainingCapital = () => {
+            let invested = Array.from(manualInputs).reduce((acc, input) => acc + (Number(input.value) || 0), 0);
+            const remaining = totalCapital - invested;
+            remainingCapitalEl.textContent = `₹${remaining.toLocaleString('en-IN')}`;
+            errorEl.textContent = remaining < 0 ? 'You have invested more than your capital!' : '';
+            remainingCapitalEl.classList.toggle('text-red-500', remaining < 0);
+        };
+        manualInputs.forEach(input => input.addEventListener('input', updateRemainingCapital));
+
+        document.getElementById('calculate-manual-btn').addEventListener('click', () => {
+            let invested = Array.from(manualInputs).reduce((acc, input) => acc + (Number(input.value) || 0), 0);
+            if (invested !== totalCapital) { errorEl.textContent = `Please invest exactly ₹3,60,000.`; return; }
+            
+            const userInvestments = new Map(Array.from(manualInputs).map(i => [parseInt(i.dataset.year), Number(i.value) || 0]));
+            let manualCorpus = 0, sipCorpus = 0;
+            const manualData = [], sipData = [];
+            for (let year = 1; year <= 30; year++) {
+                if (userInvestments.has(year)) manualCorpus += userInvestments.get(year);
+                manualCorpus *= (1 + marketReturns30Years[year - 1]);
+                manualData.push(manualCorpus);
+                for (let month = 0; month < 12; month++) { sipCorpus += 1000; sipCorpus *= (1 + marketReturns30Years[year - 1] / 12); }
+                sipData.push(sipCorpus);
+            }
+            gameState.r4_manual_final = manualCorpus; gameState.r4_sip_final = sipCorpus;
+            document.getElementById('r4-manual-investment-screen').classList.add('hidden');
+            document.getElementById('r4-results-screen').classList.remove('hidden');
+            animateValue(document.getElementById('manual-lumpsum-value'), 0, manualCorpus, 2000);
+            animateValue(document.getElementById('sip-value'), 0, sipCorpus, 2000);
+            drawChart(manualData, sipData);
+        });
+
+        document.getElementById('view-summary-btn').onclick = () => {
+            showModal('<i class="fas fa-route"></i>', 'bg-purple-500', 'Discipline Beats Timing.', 'Trying to predict the market is stressful and often fails. A consistent, automated SIP (Systematic Investment Plan) uses "Rupee Cost Averaging" to smooth out volatility and build wealth reliably.', () => {
+                updateSummary();
+                showScreen('summary');
+            });
+        }
+    }
+
+    function drawChart(manualData, sipData) {
+        const svg = document.getElementById('timeline-chart');
+        svg.innerHTML = '';
+        const width = 300, height = 220, padding = 20;
+        const maxVal = Math.max(...[...manualData, ...sipData]);
+        const toPoints = (data, color) => {
+            let points = data.map((d, i) => `${(i/29)*(width-padding)+(padding/2)},${height-padding-(d/maxVal)*(height-padding)}`).join(' ');
+            const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+            polyline.setAttribute('points', points); polyline.setAttribute('stroke', color);
+            svg.appendChild(polyline);
+        };
+        for (let i = 0; i <= 4; i++) {
+            const y = height - padding - (i / 4) * (height - padding);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', padding / 2); line.setAttribute('y1', y);
+            line.setAttribute('x2', width - padding / 2); line.setAttribute('y2', y);
+            line.setAttribute('class', 'grid'); svg.appendChild(line);
+        }
+        toPoints(manualData, '#ea580c'); toPoints(sipData, '#9333ea');
+    }
+    
+    function updateSummary() {
+        document.getElementById('summary-savings').textContent = gameState.r1_final.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        document.getElementById('summary-fd').textContent = gameState.r2_fd_final.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        document.getElementById('summary-lumpsum').textContent = gameState.r4_manual_final.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        document.getElementById('summary-sip').textContent = gameState.r4_sip_final.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+
+    function setupStandaloneTipFeature() {
+        tipBtn.addEventListener('click', () => {
+            tipBtn.disabled = true;
+            tipResultDiv.classList.remove('hidden');
+
+            let ageBasedMessage = '';
+            if (gameState.age < 30) {
+                ageBasedMessage = `Starting at ${gameState.age} gives you a powerful advantage. Time is your greatest asset, so keep this momentum going!`;
+            } else if (gameState.age >= 50) {
+                ageBasedMessage = `It's never too late to build a secure future. Consistency from today onwards is what truly matters.`;
+            } else {
+                ageBasedMessage = `You're in a prime position to build significant wealth. Staying consistent with your investments is the key.`;
+            }
+            
+            const personalizedTip = `Great job completing the challenge, ${gameState.nickname}! The key to wealth is consistency. Start a small SIP in a good equity mutual fund. ${ageBasedMessage}`;
+            
+            tipContent.textContent = personalizedTip;
+        });
+    }
+
+    document.getElementById('restart-btn').addEventListener('click', initGame);
+    window.onload = () => { 
+        initGame(); 
+        setupStartScreen();
+        setupRound1(); 
+        setupRound2(); 
+        setupRound3(); 
+        setupRound4(); 
+        setupStandaloneTipFeature(); 
+    };
+
+</script>
+</body>
+</html>
+
